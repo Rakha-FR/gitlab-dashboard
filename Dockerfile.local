@@ -1,3 +1,19 @@
+# Stage 1: Build stage
+FROM node:18-alpine AS builder
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+RUN npm install
+
+# Copy source code
+COPY . .
+
+# Build aplikasi
+RUN npm run build
+
 # Stage 2: Runtime stage
 FROM nginx:alpine
 
@@ -5,7 +21,7 @@ FROM nginx:alpine
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 # Copy hasil build dari stage sebelumnya
-COPY build /usr/share/nginx/html
+COPY --from=builder /app/build /usr/share/nginx/html
 
 # Expose port
 EXPOSE 80
