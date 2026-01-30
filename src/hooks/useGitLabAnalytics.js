@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { testConnection, fetchDeployments } from '../api/gitlabApi';
+import { testConnection, fetchDeployments, fetchPipelines } from '../api/gitlabApi';
 import { DEPLOYMENT_STATUSES, AUTO_REFRESH_INTERVAL } from '../utils/constants';
 import { getDateFromString } from '../utils/dateUtils';
 
@@ -53,6 +53,65 @@ const processDeploymentData = (allDeployments) => {
     failed,
     created,
     blocked,
+    skipped,
+    successRate,
+    failureRate,
+    chartData,
+    failedPipelines,
+    lastUpdated: new Date().toLocaleString()
+  };
+};
+
+const processPipelineData = (allPipelines) => {
+  const total = allPipelines.length;
+  const success = allPipelines.filter(p => p.status === 'success').length;
+  const failed = allPipelines.filter(p => p.status === 'failed').length;
+  const running = allPipelines.filter(p => p.status === 'running').length;
+  const pending = allPipelines.filter(p => p.status === 'pending').length;
+  const canceled = allPipelines.filter(p => p.status === 'canceled').length;
+  const skipped = allPipelines.filter(p => p.status === 'skipped').length;
+
+  const successRate = total > 0 ? ((success / total) * 100).toFixed(2) : 0;
+  const failureRate = total > 0 ? ((failed / total) * 100).toFixed(2) : 0;
+
+  // Group by date untuk chart
+  const dailyStats = {};
+  allPipelines.forEach(pipeline => {
+    const date = getDateFromString(pipeline.created_at);
+    if (!dailyStats[date]) {
+      dailyStats[date] = { date, success: 0, failed: 0, total: 0 };
+    }
+    dailyStats[date].total++;
+    if (pipeline.status === 'success') dailyStats[date].success++;
+    if (pipeline.status === 'failed') dailyStats[date].failed++;
+  });
+
+  const chartData = Object.values(dailyStats).sort((a, b) =>
+    new Date(a.date) - new Date(b.date)
+  );
+
+  // Extract failed pipeline details
+  const failedPipelines = allPipelines
+    .filter(pipeline => pipeline.status === 'failed')
+    .map(pipeline => ({
+      id: pipeline.id,
+      iid: pipeline.iid,
+      status: pipeline.status,
+      createdAt: pipeline.created_at,
+      updatedAt: pipeline.updated_at,
+      ref: pipeline.ref,
+      sha: pipeline.sha?.substring(0, 8) || 'N/A',
+      pipelineJobUrl: `${pipeline.web_url}` // GitLab provides web_url directly
+    }))
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+  return {
+    total,
+    running,
+    success,
+    failed,
+    pending,
+    canceled,
     skipped,
     successRate,
     failureRate,

@@ -42,21 +42,90 @@ export const fetchDeployments = async (config, environment, dateRange, status = 
   };
 
   const dateFromStr = getDateRangeStart(dateRange);
-  
-  let url = `${config.gitlabUrl}/api/v4/projects/${projectId}/deployments?environment=${environment}&per_page=250&updated_after=${dateFromStr}&order_by=updated_at&sort=desc`;
-  
-  if (status) {
-    url += `&status=${status}`;
-  }
+  const allDeployments = [];
+  let page = 1;
+  const perPage = 500; // Maksimal per page yang didukung GitLab
 
-  const response = await fetch(url, { headers, mode: 'cors' });
-
-  if (!response.ok) {
-    if (response.status === 404) {
-      throw new Error(`No deployments found for environment "${environment}". Make sure the environment exists in your project.`);
+  while (true) {
+    let url = `${config.gitlabUrl}/api/v4/projects/${projectId}/deployments?environment=${environment}&per_page=${perPage}&page=${page}&updated_after=${dateFromStr}&order_by=updated_at&sort=desc`;
+    
+    if (status) {
+      url += `&status=${status}`;
     }
-    throw new Error(`API Error: ${response.status} - ${response.statusText}`);
+
+    const response = await fetch(url, { headers, mode: 'cors' });
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        throw new Error(`No deployments found for environment "${environment}". Make sure the environment exists in your project.`);
+      }
+      throw new Error(`API Error: ${response.status} - ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    
+    if (!Array.isArray(data) || data.length === 0) {
+      break; // Stop pagination jika tidak ada data
+    }
+
+    allDeployments.push(...data);
+
+    // Check apakah ada halaman berikutnya dari header
+    const nextPage = response.headers.get('X-Next-Page');
+    if (!nextPage) {
+      break; // Tidak ada halaman berikutnya
+    }
+
+    page++;
   }
 
-  return await response.json();
+  return allDeployments;
+};
+
+export const fetchPipelines = async (config, projectId, dateRange, status = null) => {
+  const encodedProjectId = encodeURIComponent(projectId);
+  const headers = {
+    'PRIVATE-TOKEN': config.token,
+    'Content-Type': 'application/json'
+  };
+
+  const dateFromStr = getDateRangeStart(dateRange);
+  const allPipelines = [];
+  let page = 1;
+  const perPage = 500; // Maksimal per page yang didukung GitLab
+
+  while (true) {
+    let url = `${config.gitlabUrl}/api/v4/projects/${encodedProjectId}/pipelines?per_page=${perPage}&page=${page}&updated_after=${dateFromStr}&order_by=updated_at&sort=desc`;
+    
+    if (status) {
+      url += `&status=${status}`;
+    }
+
+    const response = await fetch(url, { headers, mode: 'cors' });
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        throw new Error(`Project not found. Check your project path format.`);
+      }
+      throw new Error(`API Error: ${response.status} - ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    
+    if (!Array.isArray(data) || data.length === 0) {
+      break; // Stop pagination jika tidak ada data
+    }
+
+    allPipelines.push(...data);
+
+    // Check apakah ada halaman berikutnya dari header
+    const nextPage = response.headers.get('X-Next-Page');
+    if (!nextPage) {
+      break; // Tidak ada halaman berikutnya
+    }
+
+    page++;
+  }
+
+  return allPipelines;
 };
