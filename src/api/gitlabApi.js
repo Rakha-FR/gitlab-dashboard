@@ -129,3 +129,29 @@ export const fetchPipelines = async (config, projectId, dateRange, status = null
 
   return allPipelines;
 };
+export const fetchPipelineJobs = async (config, projectId, pipelineId) => {
+  const encodedProjectId = encodeURIComponent(projectId);
+  const headers = {
+    'PRIVATE-TOKEN': config.token,
+    'Content-Type': 'application/json'
+  };
+
+  try {
+    const response = await fetch(
+      `${config.gitlabUrl}/api/v4/projects/${encodedProjectId}/pipelines/${pipelineId}/jobs?per_page=100&order_by=updated_at&sort=desc`,
+      { headers, mode: 'cors' }
+    );
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        return [];
+      }
+      throw new Error(`API Error: ${response.status} - ${response.statusText}`);
+    }
+
+    return await response.json();
+  } catch (err) {
+    console.error(`Error fetching jobs for pipeline ${pipelineId}:`, err);
+    return [];
+  }
+};

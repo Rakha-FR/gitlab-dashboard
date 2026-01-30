@@ -50,7 +50,11 @@ export const GitLabDashboard = () => {
         {data && (
           <div className="grid grid-cols-1 gap-6">
             <ChartsSection data={data} />
-            <FailedPipelinesTable failedPipelines={data.failedPipelines} />
+            <FailedPipelinesTable 
+              failedPipelines={data.failedPipelines}
+              config={config}
+              projectPath={config.projectPath}
+            />
           </div>
         )}
 

@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { testConnection, fetchDeployments } from '../api/gitlabApi';
+import { testConnection, fetchDeployments, fetchPipelines } from '../api/gitlabApi';
 import { DEPLOYMENT_STATUSES, AUTO_REFRESH_INTERVAL } from '../utils/constants';
 import { getDateFromString } from '../utils/dateUtils';
 
-const processDeploymentData = (allDeployments) => {
+const processDeploymentData = (allDeployments, deploymentPipelines = []) => {
   const total = allDeployments.length;
   const running = allDeployments.filter(d => d.status === DEPLOYMENT_STATUSES.RUNNING).length;
   const success = allDeployments.filter(d => d.status === DEPLOYMENT_STATUSES.SUCCESS).length;
@@ -45,8 +45,26 @@ const processDeploymentData = (allDeployments) => {
   );
 
   // Extract failed pipeline details
+  // Create a map of sha -> latest pipeline status to filter out restarted pipelines that now pass
+  const latestPipelineByCommit = {};
+  deploymentPipelines.forEach(pipeline => {
+    if (!latestPipelineByCommit[pipeline.sha] || 
+        new Date(pipeline.updated_at) > new Date(latestPipelineByCommit[pipeline.sha].updated_at)) {
+      latestPipelineByCommit[pipeline.sha] = pipeline;
+    }
+  });
+
   const failedPipelines = allDeployments
     .filter(deployment => deployment.status === DEPLOYMENT_STATUSES.FAILED)
+    .filter(deployment => {
+      // Check if the pipeline for this commit has been restarted and now passes
+      const latestPipeline = latestPipelineByCommit[deployment.sha];
+      if (latestPipeline && latestPipeline.status === 'success') {
+        // Pipeline was restarted and now passes, exclude from failed list
+        return false;
+      }
+      return true;
+    })
     .map(deployment => {
       // Try to get URL from different possible paths in the API response
       let pipelineUrl = null;
@@ -181,8 +199,11 @@ export const useGitLabAnalytics = (config, selectedEnvironment, dateRange) => {
 
       // Fetch deployments filtered by selected environment
       const allDeployments = await fetchDeployments(config, selectedEnvironment, dateRange);
+      
+      // Fetch pipelines to check for restarted pipelines with new status
+      const allPipelines = await fetchPipelines(config, config.projectPath, dateRange);
 
-      const processedData = processDeploymentData(allDeployments);
+      const processedData = processDeploymentData(allDeployments, allPipelines);
 
       setData(processedData);
     } catch (err) {
