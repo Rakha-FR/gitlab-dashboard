@@ -38,7 +38,7 @@ export const FailedPipelinesTable = ({ failedPipelines }) => {
                 </td>
                 <td className="py-3 px-4">
                   <div className="flex gap-2">
-                    {pipeline.pipelineJobUrl && (
+                    {pipeline.pipelineJobUrl ? (
                       <a
                         href={pipeline.pipelineJobUrl}
                         target="_blank"
@@ -47,6 +47,10 @@ export const FailedPipelinesTable = ({ failedPipelines }) => {
                       >
                         View Error
                       </a>
+                    ) : (
+                      <span className="inline-block bg-gray-400 text-white px-3 py-1 rounded text-xs font-medium">
+                        No Link
+                      </span>
                     )}
                   </div>
                 </td>

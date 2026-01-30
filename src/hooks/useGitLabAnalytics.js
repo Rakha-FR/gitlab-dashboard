@@ -47,16 +47,40 @@ const processDeploymentData = (allDeployments) => {
   // Extract failed pipeline details
   const failedPipelines = allDeployments
     .filter(deployment => deployment.status === DEPLOYMENT_STATUSES.FAILED)
-    .map(deployment => ({
-      id: deployment.id,
-      iid: deployment.iid,
-      status: deployment.status,
-      createdAt: deployment.created_at,
-      updatedAt: deployment.updated_at,
-      ref: deployment.ref,
-      sha: deployment.sha?.substring(0, 8) || 'N/A',
-      pipelineJobUrl: deployment.deployable?.web_url || null
-    }))
+    .map(deployment => {
+      // Try to get URL from different possible paths in the API response
+      let pipelineUrl = null;
+      if (deployment.deployable?.pipeline?.web_url) {
+        pipelineUrl = deployment.deployable.pipeline.web_url;
+      } else if (deployment.deployable?.web_url) {
+        pipelineUrl = deployment.deployable.web_url;
+      } else if (deployment.pipeline_url) {
+        pipelineUrl = deployment.pipeline_url;
+      }
+      
+      const failedPipeline = {
+        id: deployment.id,
+        iid: deployment.iid,
+        status: deployment.status,
+        createdAt: deployment.created_at,
+        updatedAt: deployment.updated_at,
+        ref: deployment.ref,
+        sha: deployment.sha?.substring(0, 8) || 'N/A',
+        pipelineJobUrl: pipelineUrl
+      };
+      
+      console.log('Failed deployment URL resolution:', {
+        deploymentId: deployment.id,
+        foundUrl: pipelineUrl,
+        availablePaths: {
+          'deployable.pipeline.web_url': deployment.deployable?.pipeline?.web_url,
+          'deployable.web_url': deployment.deployable?.web_url,
+          'pipeline_url': deployment.pipeline_url
+        }
+      });
+      
+      return failedPipeline;
+    })
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
   return {
@@ -166,16 +190,15 @@ export const useGitLabAnalytics = (config, selectedEnvironment, dateRange) => {
       const project = await testConnection(config);
       console.log('Connected to project:', project.name);
 
-      // Fetch all deployments
-      const allDeployments = await fetchDeployments(config, selectedEnvironment, dateRange);
-
-      const processedData = processDeploymentData(allDeployments);
+      // Fetch all pipelines (includes build errors, not just deployments)
+      const allPipelines = await fetchPipelines(config, project.id, dateRange);
       
-      // Update pipelineJobUrl with correct config
-      processedData.failedPipelines = processedData.failedPipelines.map(p => ({
-        ...p,
-        pipelineJobUrl: p.pipelineJobUrl ? `${config.gitlabUrl}/${config.projectPath}/-/jobs/${p.id}` : null
-      }));
+      // Debug: Log pipeline structure
+      if (allPipelines.length > 0) {
+        console.log('Sample pipeline data:', allPipelines[0]);
+      }
+
+      const processedData = processPipelineData(allPipelines);
 
       setData(processedData);
     } catch (err) {
