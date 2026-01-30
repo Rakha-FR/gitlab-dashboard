@@ -15,16 +15,29 @@ const processDeploymentData = (allDeployments) => {
   const successRate = total > 0 ? ((success / total) * 100).toFixed(2) : 0;
   const failureRate = total > 0 ? ((failed / total) * 100).toFixed(2) : 0;
 
-  // Group by date untuk chart
+  // Group by date untuk chart dengan semua statuses
   const dailyStats = {};
   allDeployments.forEach(deployment => {
     const date = getDateFromString(deployment.created_at);
     if (!dailyStats[date]) {
-      dailyStats[date] = { date, success: 0, failed: 0, total: 0 };
+      dailyStats[date] = { 
+        date, 
+        success: 0, 
+        failed: 0, 
+        running: 0,
+        created: 0,
+        blocked: 0,
+        skipped: 0,
+        total: 0 
+      };
     }
     dailyStats[date].total++;
     if (deployment.status === DEPLOYMENT_STATUSES.SUCCESS) dailyStats[date].success++;
     if (deployment.status === DEPLOYMENT_STATUSES.FAILED) dailyStats[date].failed++;
+    if (deployment.status === DEPLOYMENT_STATUSES.RUNNING) dailyStats[date].running++;
+    if (deployment.status === DEPLOYMENT_STATUSES.CREATED) dailyStats[date].created++;
+    if (deployment.status === DEPLOYMENT_STATUSES.BLOCKED) dailyStats[date].blocked++;
+    if (deployment.status === DEPLOYMENT_STATUSES.SKIPPED) dailyStats[date].skipped++;
   });
 
   const chartData = Object.values(dailyStats).sort((a, b) =>
@@ -42,7 +55,7 @@ const processDeploymentData = (allDeployments) => {
       updatedAt: deployment.updated_at,
       ref: deployment.ref,
       sha: deployment.sha?.substring(0, 8) || 'N/A',
-      pipelineJobUrl: deployment.deployable ? `https://git.neuron.id/${encodeURIComponent('group/project')}/-/jobs/${deployment.deployable.id}` : null
+      pipelineJobUrl: deployment.deployable?.web_url || null
     }))
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
@@ -74,16 +87,29 @@ const processPipelineData = (allPipelines) => {
   const successRate = total > 0 ? ((success / total) * 100).toFixed(2) : 0;
   const failureRate = total > 0 ? ((failed / total) * 100).toFixed(2) : 0;
 
-  // Group by date untuk chart
+  // Group by date untuk chart dengan semua statuses
   const dailyStats = {};
   allPipelines.forEach(pipeline => {
     const date = getDateFromString(pipeline.created_at);
     if (!dailyStats[date]) {
-      dailyStats[date] = { date, success: 0, failed: 0, total: 0 };
+      dailyStats[date] = { 
+        date, 
+        success: 0, 
+        failed: 0, 
+        running: 0,
+        pending: 0,
+        canceled: 0,
+        skipped: 0,
+        total: 0 
+      };
     }
     dailyStats[date].total++;
     if (pipeline.status === 'success') dailyStats[date].success++;
     if (pipeline.status === 'failed') dailyStats[date].failed++;
+    if (pipeline.status === 'running') dailyStats[date].running++;
+    if (pipeline.status === 'pending') dailyStats[date].pending++;
+    if (pipeline.status === 'canceled') dailyStats[date].canceled++;
+    if (pipeline.status === 'skipped') dailyStats[date].skipped++;
   });
 
   const chartData = Object.values(dailyStats).sort((a, b) =>
@@ -101,7 +127,7 @@ const processPipelineData = (allPipelines) => {
       updatedAt: pipeline.updated_at,
       ref: pipeline.ref,
       sha: pipeline.sha?.substring(0, 8) || 'N/A',
-      pipelineJobUrl: `${pipeline.web_url}` // GitLab provides web_url directly
+      pipelineJobUrl: pipeline.web_url || null // Direct link ke pipeline
     }))
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 

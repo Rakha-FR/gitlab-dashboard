@@ -21,7 +21,10 @@ export const ChartsSection = ({ data }) => {
   const pieData = [
     { name: 'Success', value: data.success, color: STATUS_COLORS.success },
     { name: 'Failed', value: data.failed, color: STATUS_COLORS.failed },
-    { name: 'Running', value: data.running, color: STATUS_COLORS.running }
+    { name: 'Running', value: data.running, color: STATUS_COLORS.running },
+    { name: 'Created', value: data.created, color: STATUS_COLORS.created },
+    { name: 'Blocked', value: data.blocked, color: STATUS_COLORS.blocked },
+    { name: 'Skipped', value: data.skipped, color: STATUS_COLORS.skipped }
   ].filter(item => item.value > 0);
 
   return (
@@ -38,6 +41,10 @@ export const ChartsSection = ({ data }) => {
             <Legend />
             <Line type="monotone" dataKey="success" stroke={STATUS_COLORS.success} strokeWidth={2} name="Success" />
             <Line type="monotone" dataKey="failed" stroke={STATUS_COLORS.failed} strokeWidth={2} name="Failed" />
+            <Line type="monotone" dataKey="running" stroke={STATUS_COLORS.running} strokeWidth={2} name="Running" />
+            <Line type="monotone" dataKey="created" stroke={STATUS_COLORS.created} strokeWidth={2} name="Created" />
+            <Line type="monotone" dataKey="blocked" stroke={STATUS_COLORS.blocked} strokeWidth={2} name="Blocked" />
+            <Line type="monotone" dataKey="skipped" stroke={STATUS_COLORS.skipped} strokeWidth={2} name="Skipped" />
             <Line type="monotone" dataKey="total" stroke={STATUS_COLORS.total} strokeWidth={2} name="Total" />
           </LineChart>
         </ResponsiveContainer>
@@ -79,6 +86,10 @@ export const ChartsSection = ({ data }) => {
             <Legend />
             <Bar dataKey="success" fill={STATUS_COLORS.success} name="Success" />
             <Bar dataKey="failed" fill={STATUS_COLORS.failed} name="Failed" />
+            <Bar dataKey="running" fill={STATUS_COLORS.running} name="Running" />
+            <Bar dataKey="created" fill={STATUS_COLORS.created} name="Created" />
+            <Bar dataKey="blocked" fill={STATUS_COLORS.blocked} name="Blocked" />
+            <Bar dataKey="skipped" fill={STATUS_COLORS.skipped} name="Skipped" />
           </BarChart>
         </ResponsiveContainer>
       </div>
