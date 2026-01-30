@@ -68,16 +68,28 @@ const processDeploymentData = (allDeployments, deploymentPipelines = []) => {
     .map(deployment => {
       // Try to get URL from different possible paths in the API response
       let pipelineUrl = null;
+      let pipelineId = null;
+      
       if (deployment.deployable?.pipeline?.web_url) {
         pipelineUrl = deployment.deployable.pipeline.web_url;
+        pipelineId = deployment.deployable.pipeline.id;
       } else if (deployment.deployable?.web_url) {
         pipelineUrl = deployment.deployable.web_url;
+        pipelineId = deployment.deployable.id;
       } else if (deployment.pipeline_url) {
         pipelineUrl = deployment.pipeline_url;
       }
       
+      // Extract pipeline ID from URL if not found in the object
+      if (!pipelineId && pipelineUrl) {
+        const match = pipelineUrl.match(/pipelines\/(\d+)/);
+        if (match) {
+          pipelineId = parseInt(match[1]);
+        }
+      }
+      
       const failedPipeline = {
-        id: deployment.id,
+        id: pipelineId || deployment.id,
         iid: deployment.iid,
         status: deployment.status,
         createdAt: deployment.created_at,

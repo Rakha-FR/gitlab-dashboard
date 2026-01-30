@@ -45,13 +45,12 @@ export const ChartsSection = ({ data }) => {
             <Line type="monotone" dataKey="created" stroke={STATUS_COLORS.created} strokeWidth={2} name="Created" />
             <Line type="monotone" dataKey="blocked" stroke={STATUS_COLORS.blocked} strokeWidth={2} name="Blocked" />
             <Line type="monotone" dataKey="skipped" stroke={STATUS_COLORS.skipped} strokeWidth={2} name="Skipped" />
-            <Line type="monotone" dataKey="total" stroke={STATUS_COLORS.total} strokeWidth={2} name="Total" />
           </LineChart>
         </ResponsiveContainer>
       </div>
 
       {/* Status Distribution */}
-      <div className="bg-white rounded-lg shadow-md p-6">
+      <div className="bg-white rounded-lg shadow-md p-6 relative">
         <h3 className="text-lg font-semibold text-gray-800 mb-4">Status Distribution</h3>
         <ResponsiveContainer width="100%" height={300}>
           <PieChart>
@@ -60,7 +59,7 @@ export const ChartsSection = ({ data }) => {
               cx="50%"
               cy="50%"
               labelLine={false}
-              label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+              label={false}
               outerRadius={100}
               fill="#8884d8"
               dataKey="value"
@@ -72,6 +71,17 @@ export const ChartsSection = ({ data }) => {
             <Tooltip />
           </PieChart>
         </ResponsiveContainer>
+        {/* Legend moved to bottom-left */}
+        <div className="absolute bottom-6 left-6 flex flex-col gap-1">
+          {pieData.map((entry, index) => (
+            <div key={`legend-${index}`} className="flex items-center gap-2 text-xs">
+              <div className="w-3 h-3 rounded" style={{ backgroundColor: entry.color }}></div>
+              <span className="text-gray-700">
+                {entry.name}: {((entry.value / data.total) * 100).toFixed(0)}%
+              </span>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Daily Comparison */}
