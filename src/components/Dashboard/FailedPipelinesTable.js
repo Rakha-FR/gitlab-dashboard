@@ -147,67 +147,65 @@ export const FailedPipelinesTable = ({ failedPipelines, config, projectPath }) =
             {paginatedPipelines.map((pipeline, index) => {
               const isExpanded = expandedRows.has(index);
               return (
-                <tr key={index}>
-                  <td className="py-3 px-4">
-                    <button
-                      onClick={() => toggleExpandRow(index)}
-                      className="inline-flex items-center justify-center hover:bg-gray-200 rounded p-1 transition-colors"
-                      title={isExpanded ? 'Collapse' : 'Expand to see failed jobs'}
-                    >
-                      {isExpanded ? (
-                        <ChevronUp className="w-4 h-4 text-gray-600" />
-                      ) : (
-                        <ChevronDown className="w-4 h-4 text-gray-600" />
-                      )}
-                    </button>
-                  </td>
-                  <td className="py-3 px-4 text-gray-700">{formatDate(pipeline.createdAt)}</td>
-                  <td className="py-3 px-4 text-gray-700">
-                    <span className="inline-block bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-medium">
-                      {pipeline.ref}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 text-gray-700 font-mono text-xs">{pipeline.sha}</td>
-                  <td className="py-3 px-4">
-                    <span className="inline-block bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-medium">
-                      {pipeline.status.toUpperCase()}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4">
-                    <div className="flex gap-2">
-                      {pipeline.pipelineJobUrl ? (
-                        <a
-                          href={pipeline.pipelineJobUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-block bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
-                        >
-                          View Error
-                        </a>
-                      ) : (
-                        <span className="inline-block bg-gray-400 text-white px-3 py-1 rounded text-xs font-medium">
-                          No Link
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-            {/* Expandable job details row */}
-            {paginatedPipelines.map((pipeline, index) => {
-              const isExpanded = expandedRows.has(index);
-              if (!isExpanded) return null;
-              return (
-                <tr key={`${index}-jobs`}>
-                  <td colSpan="6">
-                    <JobDetails
-                      pipelineId={pipeline.id}
-                      projectPath={projectPath}
-                      config={config}
-                    />
-                  </td>
-                </tr>
+                <>
+                  <tr key={index} className="border-b border-gray-200 hover:bg-gray-50">
+                    <td className="py-3 px-4">
+                      <button
+                        onClick={() => toggleExpandRow(index)}
+                        className="inline-flex items-center justify-center hover:bg-gray-200 rounded p-1 transition-colors"
+                        title={isExpanded ? 'Collapse' : 'Expand to see failed jobs'}
+                      >
+                        {isExpanded ? (
+                          <ChevronUp className="w-4 h-4 text-gray-600" />
+                        ) : (
+                          <ChevronDown className="w-4 h-4 text-gray-600" />
+                        )}
+                      </button>
+                    </td>
+                    <td className="py-3 px-4 text-gray-700">{formatDate(pipeline.createdAt)}</td>
+                    <td className="py-3 px-4 text-gray-700">
+                      <span className="inline-block bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-medium">
+                        {pipeline.ref}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 text-gray-700 font-mono text-xs">{pipeline.sha}</td>
+                    <td className="py-3 px-4">
+                      <span className="inline-block bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-medium">
+                        {pipeline.status.toUpperCase()}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4">
+                      <div className="flex gap-2">
+                        {pipeline.pipelineJobUrl ? (
+                          <a
+                            href={pipeline.pipelineJobUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-block bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
+                          >
+                            View Error
+                          </a>
+                        ) : (
+                          <span className="inline-block bg-gray-400 text-white px-3 py-1 rounded text-xs font-medium">
+                            No Link
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                  {/* Expandable job details row - shown directly below pipeline */}
+                  {isExpanded && (
+                    <tr key={`${index}-jobs`}>
+                      <td colSpan="6">
+                        <JobDetails
+                          pipelineId={pipeline.id}
+                          projectPath={projectPath}
+                          config={config}
+                        />
+                      </td>
+                    </tr>
+                  )}
+                </>
               );
             })}
           </tbody>
