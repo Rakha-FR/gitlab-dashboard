@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { testConnection, fetchDeployments, fetchPipelines } from '../api/gitlabApi';
+import { testConnection, fetchDeployments } from '../api/gitlabApi';
 import { DEPLOYMENT_STATUSES, AUTO_REFRESH_INTERVAL } from '../utils/constants';
 import { getDateFromString } from '../utils/dateUtils';
 
@@ -68,16 +68,6 @@ const processDeploymentData = (allDeployments) => {
         sha: deployment.sha?.substring(0, 8) || 'N/A',
         pipelineJobUrl: pipelineUrl
       };
-      
-      console.log('Failed deployment URL resolution:', {
-        deploymentId: deployment.id,
-        foundUrl: pipelineUrl,
-        availablePaths: {
-          'deployable.pipeline.web_url': deployment.deployable?.pipeline?.web_url,
-          'deployable.web_url': deployment.deployable?.web_url,
-          'pipeline_url': deployment.pipeline_url
-        }
-      });
       
       return failedPipeline;
     })
@@ -188,17 +178,11 @@ export const useGitLabAnalytics = (config, selectedEnvironment, dateRange) => {
     try {
       // Test connection first
       const project = await testConnection(config);
-      console.log('Connected to project:', project.name);
 
-      // Fetch all pipelines (includes build errors, not just deployments)
-      const allPipelines = await fetchPipelines(config, project.id, dateRange);
-      
-      // Debug: Log pipeline structure
-      if (allPipelines.length > 0) {
-        console.log('Sample pipeline data:', allPipelines[0]);
-      }
+      // Fetch deployments filtered by selected environment
+      const allDeployments = await fetchDeployments(config, selectedEnvironment, dateRange);
 
-      const processedData = processPipelineData(allPipelines);
+      const processedData = processDeploymentData(allDeployments);
 
       setData(processedData);
     } catch (err) {
